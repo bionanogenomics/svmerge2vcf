@@ -12,14 +12,20 @@ usage: svmerge_to_vcf.py [-h] [-s SVMERGE_PATH] [-n SAMPLE] [-o OUTPUT_PREFIX]
 Stand-alone script to convert Bionano SVMerge file format to VCF.
 
 optional arguments:
+
   -h, --help        show this help message and exit
+  
   -s SVMERGE_PATH   Path to SVMerge file to convert (required)
+  
   -n SAMPLE         Sample ID name for genotype data (optional, default
                     "Sample1")
+                    
   -o OUTPUT_PREFIX  Prefix for output vcf (optional, default to be same as
                     input svmerge)
+                    
   -a REF_ACCESSION  RefSeq assembly accession version (optional, default
                     "GCA_000001405.1")
+                    
   -b HUMAN_BOOL     Whether sample is human (optional, default "True")
 
 Note:  `python smap_to_vcf.py -h` to see usage on command line
