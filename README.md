@@ -28,7 +28,7 @@ optional arguments:
                     
     -b HUMAN_BOOL     Whether sample is human (optional, default "True")
 
-Note:  `python smap_to_vcf.py -h` to see usage on command line
+Note:  `python svmerge_to_vcf.py -h` to see usage on command line
 
 ### Requirements
 This tool was designed to run with Python 2.7.  
