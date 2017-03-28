@@ -2,7 +2,7 @@
 # Tool for Transforming SVMerge to VCF Format
 
 ### Overview 
-The SVMerge to VCF converter tool is a standalone python script that converts insertion, deletion, and translocation breakpoint calls in an SVMerge file to VCF v4.2 format. There is one required input to the script: the SVMerge file to convert. The QUAL score is calculated as -10 time the log base 10 of (1 minus the confidence)) where confidence is the SVMerge confidence score for the given call. The QUAL ceiling is set at 20. This output VCF file can be used for further downstream analysis using any tools that take VCF files as input.
+The SVMerge to VCF converter tool is a standalone python script that converts insertion, deletion, and translocation breakpoint calls in an SVMerge file to VCF v4.2 format. There is one required input to the script: the SVMerge file to convert. The QUAL score is calculated as -10 times the log base 10 of (1 minus the confidence)) where confidence is the SVMerge confidence score for the given call. The QUAL ceiling is set at 20. This output VCF file can be used for further downstream analysis using any tools that take VCF files as input.
 
 ###Usage
 
