@@ -1,6 +1,7 @@
 #SVMerge-to-toVCF converter
 
 #Version 1 supports conversion of insertions, deletions, and translocation breakpoints. It does not report breakpoint uncertainty.
+#Version 2 adds support for duplications and inversions
 
 description='''Stand-alone script to convert Bionano SVMerge file format to VCF.'''
 
@@ -26,7 +27,11 @@ class SV(object):
         self.vcf_type = vcf_type
         self.svlen = svlen #default SV length
 
-sv_types = [SV("insertion", "INS"), SV("deletion","DEL"), SV("translocation_intrachr","TRA",0),SV("translocation_interchr","TRA",0)] #conversion table
+sv_types = [SV("insertion", "INS"), SV("deletion","DEL"),
+            SV("translocation_intrachr","TRA",0),
+            SV("translocation_interchr","TRA",0),
+            SV("inversion", "INV"), SV("inversion_partial", "INV"), #SV("inversion_paired", "INV"), #paired are not in merged output
+            SV("duplication", "DUP"), SV("duplication_split", "DUP"), SV("duplication_inverted", "INVDUP")]
 accepted_svtypes = dict([(sv.sv_type,sv.vcf_type) for sv in sv_types])
 default_svlen = dict([(sv.sv_type,sv.svlen) for sv in sv_types])
 
@@ -80,7 +85,7 @@ def svmerge_to_vcf(svmerge_path, sample, output_prefix, ref_accession, human_boo
     dogeno = False #SVMerge has genotype info: add to vcf
     nent = 0 #number of processed entries
     conf = defaultconf #if !doconf, this is used
-
+    invdata = {}
     for line in f1 :
         if line[0] == "#" :
             continue
@@ -104,23 +109,22 @@ def svmerge_to_vcf(svmerge_path, sample, output_prefix, ref_accession, human_boo
         ref = tokens[2] #RefcontigID1
         ref1 = tokens[3] #RefcontigID2
         pos = int(float(tokens[4])) #RefStartPos
-        end  = int(float(tokens[5])) #RefEndPos
+        end = int(float(tokens[5])) #RefEndPos
+        if end > 0 and end < pos : #make sure they are sorted (partials have end == -1, do not change this case)
+            a = end
+            end = pos
+            pos = a
 
         if doconf :
             conf = tokens[6] #Confidence
             try :
                 conf = float(conf)
-                #I was going to put this if block in an else of the try, but this can also catch exceptions raised in log10
-
                 if conf==-1.0 :
                     conf = defaultconf
                 elif conf >= 1.0 :
                     conf = maxconf
                 else :
-                    conf = str(round(-10*math.log10(1-conf),2))
-                    if conf=='-0.0':
-                        conf = '0.0'
-
+                    conf = str(abs(round(-10*math.log10(1-conf),2))) #abs to prevent '-0.0'
             except :
                 conf = defaultconf
 
@@ -136,7 +140,7 @@ def svmerge_to_vcf(svmerge_path, sample, output_prefix, ref_accession, human_boo
 
         svlen = default_svlen[svtype]
         if svlen is None:
-            svlen = int(float(tokens[8]))
+            svlen = round(float(tokens[8]))
 
         nent += 1
 
@@ -151,10 +155,25 @@ def svmerge_to_vcf(svmerge_path, sample, output_prefix, ref_accession, human_boo
             elif ref1=='24':
                 ref1='Y'
 
-        if svtype=="insertion" or svtype=="deletion":
-            fout.write(("chr%s\t%i\tSVMerge%s\tN\t<%s>\t%s\tPASS\tSVTYPE=%s"+si+"END=%i"+si+"SVLEN=%i") % (ref, pos, svmergeid, vcftype, conf, vcftype, end, svlen))
-        elif svtype=="translocation_intrachr" or svtype=="translocation_interchr":
+        if svtype == "inversion" :
+            invdata = {"refstart"   :pos,
+                       "refstop"    :end}
+            continue #need partial line (next line)
+        
+        elif svtype == "inversion_partial" :
+            #for partial, end (RefEndPos) is always -1 (so ignore it)
+            end = max(invdata["refstart"], invdata["refstop"], pos)
+            pos = min(invdata["refstart"], invdata["refstop"], pos)
+            svlen = round(end-pos)
+
+        elif svtype.startswith("duplication") : #all duplications should be same
+            svlen = round(end-pos)
+        
+        if svtype=="translocation_intrachr" or svtype=="translocation_interchr":
             fout.write(("chr%s\t%i\tSVMerge%s\tN\t<%s>\t%s\tPASS\tSVTYPE=%s"+si+"CHR2=chr%s"+si+"END=%i"+si+"SVLEN=%i") % (ref, pos, svmergeid,vcftype, conf, vcftype, ref1, end, svlen))
+        else : #if svtype=="insertion" or svtype=="deletion": #should be same for all remaining types
+            fout.write(("chr%s\t%i\tSVMerge%s\tN\t<%s>\t%s\tPASS\tSVTYPE=%s"+si+"END=%i"+si+"SVLEN=%i") % (ref, pos, svmergeid, vcftype, conf, vcftype, end, svlen))
+        
         if dogeno:
             fout.write("\tGT\t%s" % gt)
         fout.write("\n")
@@ -169,7 +188,7 @@ def svmerge_to_vcf(svmerge_path, sample, output_prefix, ref_accession, human_boo
 def getArgs() :
     parser = argparse.ArgumentParser(description=description)
 
-	#required input
+    #required input
     parser.add_argument('-s', dest='svmerge_path', help='Path to SVMerge file to convert (required)', type=str)
 
     #optional input
