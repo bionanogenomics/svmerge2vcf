@@ -13,6 +13,8 @@ vcfheader='''##fileformat=VCFv4.2
 ##ALT=<ID=DEL,Description="Deletion">
 ##ALT=<ID=INS,Description="Insertion">
 ##ALT=<ID=TRA,Description="Translocation breakpoint">
+##ALT=<ID=INV,Description="Inversion">
+##ALT=<ID=DUP,Description="Duplication">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'''
 
 import os
@@ -142,8 +144,6 @@ def svmerge_to_vcf(svmerge_path, sample, output_prefix, ref_accession, human_boo
         if svlen is None:
             svlen = round(float(tokens[8]))
 
-        nent += 1
-
         if human_bool:
             if ref=='23':
                 ref='X'
@@ -173,6 +173,8 @@ def svmerge_to_vcf(svmerge_path, sample, output_prefix, ref_accession, human_boo
             fout.write(("chr%s\t%i\tSVMerge%s\tN\t<%s>\t%s\tPASS\tSVTYPE=%s"+si+"CHR2=chr%s"+si+"END=%i"+si+"SVLEN=%i") % (ref, pos, svmergeid,vcftype, conf, vcftype, ref1, end, svlen))
         else : #if svtype=="insertion" or svtype=="deletion": #should be same for all remaining types
             fout.write(("chr%s\t%i\tSVMerge%s\tN\t<%s>\t%s\tPASS\tSVTYPE=%s"+si+"END=%i"+si+"SVLEN=%i") % (ref, pos, svmergeid, vcftype, conf, vcftype, end, svlen))
+        
+        nent += 1
         
         if dogeno:
             fout.write("\tGT\t%s" % gt)
