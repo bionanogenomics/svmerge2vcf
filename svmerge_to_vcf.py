@@ -112,10 +112,12 @@ def svmerge_to_vcf(svmerge_path, sample, output_prefix, ref_accession, human_boo
         ref1 = tokens[3] #RefcontigID2
         pos = int(float(tokens[4])) #RefStartPos
         end = int(float(tokens[5])) #RefEndPos
-        if end > 0 and end < pos : #make sure they are sorted (partials have end == -1, do not change this case)
-            a = end
-            end = pos
-            pos = a
+        
+        if svtype!="translocation_intrachr" and svtype!="translocation_interchr":
+            if end > 0 and end < pos : #make sure they are sorted (partials have end == -1, do not change this case)
+                a = end
+                end = pos
+                pos = a
 
         if doconf :
             conf = tokens[6] #Confidence
@@ -135,7 +137,7 @@ def svmerge_to_vcf(svmerge_path, sample, output_prefix, ref_accession, human_boo
 
             if zygosity== "homozygous" :
                 gt = "1/1"
-            elif zygosity== "homozygous" :
+            elif zygosity== "heterozygous" :
                 gt = "0/1"
             else: #unknown
                 gt = "./."
